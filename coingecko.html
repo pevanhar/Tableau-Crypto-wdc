@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://connectors.tableau.com/libs/tableauwdc-2.3.latest.js"></script>
+</head>
+<body>
+  <h2>CoinGecko Crypto Market Data</h2>
+  <button onclick="tableau.connectionName = 'Live Crypto Market Data'; tableau.submit();">
+    Connect to Tableau
+  </button>
+
+  <script>
+    (function () {
+      const connector = tableau.makeConnector();
+
+      connector.getSchema = function (schemaCallback) {
+        const cols = [
+          { id: "id", dataType: tableau.dataTypeEnum.string },
+          { id: "symbol", dataType: tableau.dataTypeEnum.string },
+          { id: "name", dataType: tableau.dataTypeEnum.string },
+          { id: "current_price", dataType: tableau.dataTypeEnum.float },
+          { id: "market_cap", dataType: tableau.dataTypeEnum.float },
+          { id: "market_cap_rank", dataType: tableau.dataTypeEnum.int },
+          { id: "total_volume", dataType: tableau.dataTypeEnum.float },
+          { id: "high_24h", dataType: tableau.dataTypeEnum.float },
+          { id: "low_24h", dataType: tableau.dataTypeEnum.float },
+          { id: "price_change_24h", dataType: tableau.dataTypeEnum.float },
+          { id: "price_change_percentage_24h", dataType: tableau.dataTypeEnum.float },
+          { id: "circulating_supply", dataType: tableau.dataTypeEnum.float },
+          { id: "total_supply", dataType: tableau.dataTypeEnum.float },
+          { id: "max_supply", dataType: tableau.dataTypeEnum.float },
+          { id: "ath", dataType: tableau.dataTypeEnum.float },
+          { id: "ath_change_percentage", dataType: tableau.dataTypeEnum.float },
+          { id: "atl", dataType: tableau.dataTypeEnum.float },
+          { id: "atl_change_percentage", dataType: tableau.dataTypeEnum.float },
+          { id: "last_updated", dataType: tableau.dataTypeEnum.datetime }
+        ];
+        schemaCallback([{ id: "crypto", alias: "Crypto Market Data", columns: cols }]);
+      };
+
+      connector.getData = async function (table, doneCallback) {
+        const allData = [];
+        const baseUrl = "https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=";
+
+        for (let page = 1; page <= 4; page++) {  // up to 1000 coins (4 pages × 250)
+          const response = await fetch(baseUrl + page + "&sparkline=false");
+          const data = await response.json();
+          data.forEach(item => {
+            allData.push({
+              id: item.id,
+              symbol: item.symbol,
+              name: item.name,
+              current_price: item.current_price,
+              market_cap: item.market_cap,
+              market_cap_rank: item.market_cap_rank,
+              total_volume: item.total_volume,
+              high_24h: item.high_24h,
+              low_24h: item.low_24h,
+              price_change_24h: item.price_change_24h,
+              price_change_percentage_24h: item.price_change_percentage_24h,
+              circulating_supply: item.circulating_supply,
+              total_supply: item.total_supply,
+              max_supply: item.max_supply,
+              ath: item.ath,
+              ath_change_percentage: item.ath_change_percentage,
+              atl: item.atl,
+              atl_change_percentage: item.atl_change_percentage,
+              last_updated: item.last_updated
+            });
+          });
+        }
+
+        table.appendRows(allData);
+        doneCallback();
+      };
+
+      tableau.registerConnector(connector);
+    })();
+  </script>
+</body>
+</html>
